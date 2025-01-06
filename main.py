@@ -4,6 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from nptdms import TdmsFile
+from dr_pnas.extraction import *
 
 class ImageSelectorApp:
     def __init__(self, root):
@@ -22,6 +23,9 @@ class ImageSelectorApp:
         self.save_button.pack(side=tk.LEFT, padx=5, pady=5)
 
         self.stats_button = tk.Button(button_frame, text="Compute Stats", command=self.compute_stats)
+        self.stats_button.pack(side=tk.LEFT, padx=5, pady=5)
+
+        self.stats_button = tk.Button(button_frame, text="Compute Parameters", command=self.compute_surf_params)
         self.stats_button.pack(side=tk.LEFT, padx=5, pady=5)
 
         # Dropdown for scan direction
@@ -49,6 +53,15 @@ class ImageSelectorApp:
         self.size_entry.pack(side=tk.LEFT, padx=5)
         self.size_entry.insert(0, "20")
 
+        # Entry for physical dimensions
+        dimensions_frame = tk.Frame(root)
+        dimensions_frame.pack()
+        tk.Label(dimensions_frame, text="Physical Dimensions, um:").pack(side=tk.LEFT, padx=5)
+        self.dimensions_var = tk.DoubleVar(value=10)
+        self.dimensions_entry = tk.Entry(dimensions_frame, textvariable=self.dimensions_var, width=5)
+        self.dimensions_entry.pack(side=tk.LEFT, padx=5)
+        self.dimensions_var.trace_add("write", self.update_physical_dimensions)
+
         self.info_label = tk.Label(root, text="Load an image file to start.")
         self.info_label.pack()
 
@@ -61,6 +74,7 @@ class ImageSelectorApp:
         self.canvas_widget.pack()
 
         self.image_data = None
+        self.physical_dimensions = 10  # Default physical dimensions
         self.rect = None
         self.start_x = None
         self.start_y = None
@@ -68,6 +82,7 @@ class ImageSelectorApp:
         self.is_dragging = False
         self.extracted_area = None
         self.tdms_blend = None  # Store the TDMS file object
+        self.sh = None
 
     def load_data(self):
         file_path = filedialog.askopenfilename(filetypes=[("TDMS files", "*.tdms"), ("All files", "*.*")])
@@ -86,6 +101,13 @@ class ImageSelectorApp:
             except Exception as e:
                 self.info_label.config(text=f"Error loading file: {e}")
 
+    def update_physical_dimensions(self, *args):
+        try:
+            self.physical_dimensions = self.dimensions_var.get()
+            self.info_label.config(text=f"Physical Dimensions updated to {self.physical_dimensions}")
+        except ValueError:
+            self.info_label.config(text="Invalid physical dimensions value!")
+
     def update_image(self, event=None):
         if self.tdms_blend is not None:
             try:
@@ -93,8 +115,8 @@ class ImageSelectorApp:
                 channel = self.channel_var.get()
                 if scan_dir and channel:
                     tmp = self.tdms_blend[scan_dir][channel].data
-                    sh = int(np.sqrt(tmp.shape[0]))
-                    self.image_data = tmp.reshape(sh, sh)
+                    self.sh = int(np.sqrt(tmp.shape[0]))
+                    self.image_data = tmp.reshape(self.sh, self.sh)
 
                     self.show_image()
 
@@ -199,6 +221,25 @@ class ImageSelectorApp:
             print(f"Mean: {mean_value:.2f}, Std Dev: {std_dev:.2f}")
         else:
             self.info_label.config(text="No area selected to compute stats.")
+
+    def compute_surf_params(self):
+        if self.extracted_area is not None:
+            dx = (self.physical_dimensions*1000)/self.sh
+            #print(dx, self.physical_dimensions, self.sh)
+            params = extract_parameters(self.extracted_area,dx,dx,self.rect_size,fitted=False)
+            #print("Params:", params)
+            # Convert parameters to a DataFrame for saving
+            params_df = pd.DataFrame.from_dict(params, orient='index', columns=['Value'])
+
+            # Save to an Excel file
+            file_path = filedialog.asksaveasfilename(defaultextension=".xlsx", filetypes=[("Excel files", "*.xlsx"), ("All files", "*.*")])
+            if file_path:
+                params_df.to_excel(file_path, index=True)
+                self.info_label.config(text="Surface parameters saved successfully!")
+            else:
+                self.info_label.config(text="Save operation canceled.")
+        else:
+            self.info_label.config(text="No area selected to compute surface parameters.")
 
 if __name__ == "__main__":
     root = tk.Tk()
