@@ -26,6 +26,9 @@ class ImageSelectorApp:
         self.info_label = tk.Label(root, text="Load an image file to start.")
         self.info_label.pack()
 
+        self.stats_label = tk.Label(root, text="")
+        self.stats_label.pack()
+
         self.figure, self.ax = plt.subplots()
         self.canvas = FigureCanvasTkAgg(self.figure, master=root)
         self.canvas_widget = self.canvas.get_tk_widget()
@@ -45,13 +48,17 @@ class ImageSelectorApp:
             try:
                 self.image_data = np.load(file_path)
                 self.show_image()
+                # Compute and display stats for the entire image
+                mean_value = np.mean(self.image_data)
+                std_dev = np.std(self.image_data)
+                self.stats_label.config(text=f"Full Image Stats - Mean: {mean_value:.2f}, Std Dev: {std_dev:.2f}")
             except Exception as e:
                 self.info_label.config(text=f"Error loading file: {e}")
 
     def show_image(self):
         if self.image_data is not None:
             self.ax.clear()
-            self.ax.imshow(self.image_data, cmap='gray')
+            self.ax.imshow(self.image_data, cmap='YlOrBr_r')
             self.ax.set_title("Drag to select a 20x20 area")
             self.canvas.draw()
 
@@ -123,7 +130,7 @@ class ImageSelectorApp:
         if self.extracted_area is not None:
             mean_value = np.mean(self.extracted_area)
             std_dev = np.std(self.extracted_area)
-            self.info_label.config(text=f"Mean: {mean_value:.2f}, Std Dev: {std_dev:.2f}")
+            self.info_label.config(text=f"Selected area: Mean: {mean_value:.2f}, Std Dev: {std_dev:.2f}")
             print(f"Mean: {mean_value:.2f}, Std Dev: {std_dev:.2f}")
         else:
             self.info_label.config(text="No area selected to compute stats.")
@@ -132,4 +139,3 @@ if __name__ == "__main__":
     root = tk.Tk()
     app = ImageSelectorApp(root)
     root.mainloop()
-
