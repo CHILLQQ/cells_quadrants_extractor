@@ -1,8 +1,9 @@
 import tkinter as tk
-from tkinter import filedialog
+from tkinter import filedialog, ttk
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+from nptdms import TdmsFile
 
 class ImageSelectorApp:
     def __init__(self, root):
@@ -23,13 +24,38 @@ class ImageSelectorApp:
         self.stats_button = tk.Button(button_frame, text="Compute Stats", command=self.compute_stats)
         self.stats_button.pack(side=tk.LEFT, padx=5, pady=5)
 
+        # Dropdown for scan direction
+        self.scan_dir_label = tk.Label(root, text="Select Scan Direction:")
+        self.scan_dir_label.pack()
+        self.scan_dir_var = tk.StringVar(value="Retrace (Frame 2)")
+        self.scan_dir_dropdown = ttk.Combobox(root, textvariable=self.scan_dir_var, state="readonly")
+        self.scan_dir_dropdown['values'] = ['Retrace (Frame 2)', 'Trace (Frame 1)']
+        self.scan_dir_dropdown.pack()
+        self.scan_dir_dropdown.bind("<<ComboboxSelected>>", self.update_image)
+
+        # Dropdown for channel selection
+        self.channel_label = tk.Label(root, text="Select Channel:")
+        self.channel_label.pack()
+        self.channel_var = tk.StringVar()
+        self.channel_dropdown = ttk.Combobox(root, textvariable=self.channel_var, state="readonly")
+        self.channel_dropdown.pack()
+        self.channel_dropdown.bind("<<ComboboxSelected>>", self.update_image)
+
+        # Entry for rectangle size
+        size_frame = tk.Frame(root)
+        size_frame.pack()
+        tk.Label(size_frame, text="Rectangle Size (px):").pack(side=tk.LEFT, padx=5)
+        self.size_entry = tk.Entry(size_frame, width=5)
+        self.size_entry.pack(side=tk.LEFT, padx=5)
+        self.size_entry.insert(0, "20")
+
         self.info_label = tk.Label(root, text="Load an image file to start.")
         self.info_label.pack()
 
         self.stats_label = tk.Label(root, text="")
         self.stats_label.pack()
 
-        self.figure, self.ax = plt.subplots()
+        self.figure, (self.ax, self.ax_sub) = plt.subplots(1, 2, figsize=(10, 5))
         self.canvas = FigureCanvasTkAgg(self.figure, master=root)
         self.canvas_widget = self.canvas.get_tk_widget()
         self.canvas_widget.pack()
@@ -41,25 +67,51 @@ class ImageSelectorApp:
         self.rect_size = 20  # Fixed size of the rectangle
         self.is_dragging = False
         self.extracted_area = None
+        self.tdms_blend = None  # Store the TDMS file object
 
     def load_data(self):
-        file_path = filedialog.askopenfilename(filetypes=[("Numpy files", "*.npy"), ("All files", "*.*")])
+        file_path = filedialog.askopenfilename(filetypes=[("TDMS files", "*.tdms"), ("All files", "*.*")])
         if file_path:
             try:
-                self.image_data = np.load(file_path)
-                self.show_image()
-                # Compute and display stats for the entire image
-                mean_value = np.mean(self.image_data)
-                std_dev = np.std(self.image_data)
-                self.stats_label.config(text=f"Full Image Stats - Mean: {mean_value:.2f}, Std Dev: {std_dev:.2f}")
+                self.tdms_blend = TdmsFile.read(file_path)
+                scan_dir = self.scan_dir_var.get()
+                channels = list(self.tdms_blend[scan_dir]._channels.keys())
+
+                # Populate channel dropdown
+                self.channel_dropdown['values'] = channels
+                if not self.channel_var.get():
+                    self.channel_var.set(channels[0])
+
+                self.update_image()
             except Exception as e:
                 self.info_label.config(text=f"Error loading file: {e}")
+
+    def update_image(self, event=None):
+        if self.tdms_blend is not None:
+            try:
+                scan_dir = self.scan_dir_var.get()
+                channel = self.channel_var.get()
+                if scan_dir and channel:
+                    tmp = self.tdms_blend[scan_dir][channel].data
+                    sh = int(np.sqrt(tmp.shape[0]))
+                    self.image_data = tmp.reshape(sh, sh)
+
+                    self.show_image()
+
+                    # Compute and display stats for the entire image
+                    mean_value = np.mean(self.image_data)
+                    std_dev = np.std(self.image_data)
+                    self.stats_label.config(text=f"Full Image Stats - Mean: {mean_value:.2f}, Std Dev: {std_dev:.2f}")
+            except Exception as e:
+                self.info_label.config(text=f"Error updating image: {e}")
 
     def show_image(self):
         if self.image_data is not None:
             self.ax.clear()
             self.ax.imshow(self.image_data, cmap='YlOrBr_r')
-            self.ax.set_title("Drag to select a 20x20 area")
+            self.ax.set_title("Drag to select an area")
+            self.ax_sub.clear()
+            self.ax_sub.set_title("Selected Area")
             self.canvas.draw()
 
             self.canvas.mpl_connect("button_press_event", self.on_press)
@@ -71,6 +123,13 @@ class ImageSelectorApp:
             self.is_dragging = True
             self.start_x = int(event.xdata)
             self.start_y = int(event.ydata)
+
+            # Update rectangle size from entry
+            try:
+                self.rect_size = int(self.size_entry.get())
+            except ValueError:
+                self.info_label.config(text="Invalid rectangle size! Using default 20px.")
+                self.rect_size = 20
 
             if self.rect:
                 self.rect.remove()
@@ -114,6 +173,12 @@ class ImageSelectorApp:
                 self.info_label.config(text="Area extracted successfully!")
                 print("Extracted Area:")
                 print(self.extracted_area)
+
+                # Plot selected area in the subplot
+                self.ax_sub.clear()
+                self.ax_sub.imshow(self.extracted_area, cmap='YlOrBr_r')
+                self.ax_sub.set_title("Selected Area")
+                self.canvas.draw()
             else:
                 self.info_label.config(text="Selected area is out of bounds!")
 
