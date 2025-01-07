@@ -26,6 +26,7 @@ openpyxl
 ```
 
 ## Installation
+*All the commands below are executed in the terminal*
 
 1. Clone the repository:
    ```bash
