@@ -2,6 +2,8 @@
 
 This project provides a Python-based graphical user interface (GUI) for visualizing, analyzing, and extracting data from TDMS files. The application allows users to select regions of an image, compute statistics, and save results, including calculated surface parameters.
 
+![Model](https://github.com/CHILLQQ/cells_quadrants_extractor/blob/master/screenshot.png)
+
 ## Features
 
 - Load and visualize data from `.tdms` files.
@@ -24,6 +26,7 @@ openpyxl
 ```
 
 ## Installation
+*All the commands below are executed in the terminal*
 
 1. Clone the repository:
    ```bash
@@ -40,7 +43,7 @@ openpyxl
 
 1. Run the application:
    ```bash
-   python gui_image_selection.py
+   python main.py
    ```
 
 2. Use the GUI to:
