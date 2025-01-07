@@ -42,7 +42,7 @@ openpyxl
 
 1. Run the application:
    ```bash
-   python gui_image_selection.py
+   python main.py
    ```
 
 2. Use the GUI to:
