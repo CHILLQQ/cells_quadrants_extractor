@@ -205,13 +205,42 @@ class ImageSelectorApp:
                 self.info_label.config(text="Selected area is out of bounds!")
 
     def save_area(self):
-        if self.extracted_area is not None:
-            file_path = filedialog.asksaveasfilename(defaultextension=".npy", filetypes=[("Numpy files", "*.npy"), ("All files", "*.*")])
-            if file_path:
-                np.save(file_path, self.extracted_area)
-                self.info_label.config(text="Selected area saved successfully!")
+        if self.image_data is not None and self.tdms_blend is not None:
+            directory_path = filedialog.askdirectory(title="Select Directory to Save Areas")
+            if directory_path:
+                scan_dir = self.scan_dir_var.get()
+                channels = list(self.tdms_blend[scan_dir]._channels.keys())
+
+                for channel in channels:
+                    try:
+                        # Extract data for the channel
+                        channel_data = self.tdms_blend[scan_dir][channel].data
+                        sh = int(np.sqrt(channel_data.shape[0]))
+                        channel_image = channel_data.reshape(sh, sh)
+
+                        # Extract selected area for the channel
+                        x_start = max(self.start_x - self.rect_size // 2, 0)
+                        y_start = max(self.start_y - self.rect_size // 2, 0)
+                        x_end = min(x_start + self.rect_size, channel_image.shape[1])
+                        y_end = min(y_start + self.rect_size, channel_image.shape[0])
+
+                        extracted_area = channel_image[y_start:y_end, x_start:x_end]
+
+                        if extracted_area.shape == (self.rect_size, self.rect_size):
+                            # Save the extracted area to a file
+                            file_name = f"{channel}_selected_area.npy"
+                            file_path = f"{directory_path}/{file_name}"
+                            np.save(file_path, extracted_area)
+                        else:
+                            self.info_label.config(text=f"Selected area out of bounds for channel: {channel}")
+                    except Exception as e:
+                        self.info_label.config(text=f"Error processing channel {channel}: {e}")
+
+                self.info_label.config(text="Selected areas saved for all channels!")
+            else:
+                self.info_label.config(text="Save operation canceled.")
         else:
-            self.info_label.config(text="No area selected to save.")
+            self.info_label.config(text="No area selected or no data loaded to save.")
 
     def compute_stats(self):
         if self.extracted_area is not None:
