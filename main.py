@@ -25,8 +25,8 @@ class ImageSelectorApp:
         self.stats_button = tk.Button(button_frame, text="Compute Stats", command=self.compute_stats)
         self.stats_button.pack(side=tk.LEFT, padx=5, pady=5)
 
-        self.stats_button = tk.Button(button_frame, text="Compute Parameters", command=self.compute_surf_params)
-        self.stats_button.pack(side=tk.LEFT, padx=5, pady=5)
+        # self.stats_button = tk.Button(button_frame, text="Compute Parameters", command=self.compute_surf_params)
+        # self.stats_button.pack(side=tk.LEFT, padx=5, pady=5)
 
         # Dropdown for scan direction
         self.scan_dir_label = tk.Label(root, text="Select Scan Direction:")
@@ -251,24 +251,24 @@ class ImageSelectorApp:
         else:
             self.info_label.config(text="No area selected to compute stats.")
 
-    def compute_surf_params(self):
-        if self.extracted_area is not None:
-            dx = (self.physical_dimensions*1000)/self.sh
-            #print(dx, self.physical_dimensions, self.sh)
-            params = extract_parameters(self.extracted_area,dx,dx,self.rect_size,fitted=False)
-            #print("Params:", params)
-            # Convert parameters to a DataFrame for saving
-            params_df = pd.DataFrame.from_dict(params, orient='index', columns=['Value'])
+    # def compute_surf_params(self):
+    #     if self.extracted_area is not None:
+    #         dx = (self.physical_dimensions*1000)/self.sh
+    #         #print(dx, self.physical_dimensions, self.sh)
+    #         params = extract_parameters(self.extracted_area,dx,dx,self.rect_size,fitted=False)
+    #         #print("Params:", params)
+    #         # Convert parameters to a DataFrame for saving
+    #         params_df = pd.DataFrame.from_dict(params, orient='index', columns=['Value'])
 
-            # Save to an Excel file
-            file_path = filedialog.asksaveasfilename(defaultextension=".xlsx", filetypes=[("Excel files", "*.xlsx"), ("All files", "*.*")])
-            if file_path:
-                params_df.to_excel(file_path, index=True)
-                self.info_label.config(text="Surface parameters saved successfully!")
-            else:
-                self.info_label.config(text="Save operation canceled.")
-        else:
-            self.info_label.config(text="No area selected to compute surface parameters.")
+    #         # Save to an Excel file
+    #         file_path = filedialog.asksaveasfilename(defaultextension=".xlsx", filetypes=[("Excel files", "*.xlsx"), ("All files", "*.*")])
+    #         if file_path:
+    #             params_df.to_excel(file_path, index=True)
+    #             self.info_label.config(text="Surface parameters saved successfully!")
+    #         else:
+    #             self.info_label.config(text="Save operation canceled.")
+    #     else:
+    #         self.info_label.config(text="No area selected to compute surface parameters.")
 
 if __name__ == "__main__":
     root = tk.Tk()
