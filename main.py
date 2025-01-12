@@ -5,7 +5,6 @@ import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from nptdms import TdmsFile
 import os
-from dr_pnas.extraction import *
 
 class ImageSelectorApp:
     def __init__(self, root):
