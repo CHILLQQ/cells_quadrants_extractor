@@ -4,7 +4,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from nptdms import TdmsFile
-import os
 from dr_pnas.extraction import *
 
 class ImageSelectorApp:
@@ -26,8 +25,8 @@ class ImageSelectorApp:
         self.stats_button = tk.Button(button_frame, text="Compute Stats", command=self.compute_stats)
         self.stats_button.pack(side=tk.LEFT, padx=5, pady=5)
 
-        self.add_area_button = tk.Button(button_frame, text="Add New Area", command=self.enable_add_area)
-        self.add_area_button.pack(side=tk.LEFT, padx=5, pady=5)
+        self.stats_button = tk.Button(button_frame, text="Compute Parameters", command=self.compute_surf_params)
+        self.stats_button.pack(side=tk.LEFT, padx=5, pady=5)
 
         # Dropdown for scan direction
         self.scan_dir_label = tk.Label(root, text="Select Scan Direction:")
@@ -52,7 +51,16 @@ class ImageSelectorApp:
         tk.Label(size_frame, text="Rectangle Size (px):").pack(side=tk.LEFT, padx=5)
         self.size_entry = tk.Entry(size_frame, width=5)
         self.size_entry.pack(side=tk.LEFT, padx=5)
-        self.size_entry.insert(0, "256")
+        self.size_entry.insert(0, "20")
+
+        # Entry for physical dimensions
+        dimensions_frame = tk.Frame(root)
+        dimensions_frame.pack()
+        tk.Label(dimensions_frame, text="Physical Dimensions, um:").pack(side=tk.LEFT, padx=5)
+        self.dimensions_var = tk.DoubleVar(value=10)
+        self.dimensions_entry = tk.Entry(dimensions_frame, textvariable=self.dimensions_var, width=5)
+        self.dimensions_entry.pack(side=tk.LEFT, padx=5)
+        self.dimensions_var.trace_add("write", self.update_physical_dimensions)
 
         self.info_label = tk.Label(root, text="Load an image file to start.")
         self.info_label.pack()
@@ -66,6 +74,7 @@ class ImageSelectorApp:
         self.canvas_widget.pack()
 
         self.image_data = None
+        self.physical_dimensions = 10  # Default physical dimensions
         self.rect = None
         self.start_x = None
         self.start_y = None
@@ -74,18 +83,9 @@ class ImageSelectorApp:
         self.extracted_area = None
         self.tdms_blend = None  # Store the TDMS file object
         self.sh = None
-        self.add_area_mode = False
-        self.directory = None
-        self.file_name = None
-        self.last_rectangle = None
-        self.rectangles = []
-        self.area_counter = 0
-        self.colors = ['red', 'blue', 'green', 'purple', 'orange']
-
 
     def load_data(self):
         file_path = filedialog.askopenfilename(filetypes=[("TDMS files", "*.tdms"), ("All files", "*.*")])
-        self.directory, self.file_name = os.path.split(file_path)
         if file_path:
             try:
                 self.tdms_blend = TdmsFile.read(file_path)
@@ -100,6 +100,13 @@ class ImageSelectorApp:
                 self.update_image()
             except Exception as e:
                 self.info_label.config(text=f"Error loading file: {e}")
+
+    def update_physical_dimensions(self, *args):
+        try:
+            self.physical_dimensions = self.dimensions_var.get()
+            self.info_label.config(text=f"Physical Dimensions updated to {self.physical_dimensions}")
+        except ValueError:
+            self.info_label.config(text="Invalid physical dimensions value!")
 
     def update_image(self, event=None):
         if self.tdms_blend is not None:
@@ -120,7 +127,6 @@ class ImageSelectorApp:
             except Exception as e:
                 self.info_label.config(text=f"Error updating image: {e}")
 
-
     def show_image(self):
         if self.image_data is not None:
             self.ax.clear()
@@ -134,21 +140,8 @@ class ImageSelectorApp:
             self.canvas.mpl_connect("motion_notify_event", self.on_drag)
             self.canvas.mpl_connect("button_release_event", self.on_release)
 
-    def enable_add_area(self):
-        self.add_area_mode = True
-        if self.last_rectangle:
-            # Keep the last rectangle plotted
-            self.rectangles.append(self.last_rectangle)
-            self.last_rectangle = None  # Clear the last rectangle reference
-        #print(self.rectangles)
-        # Draw all saved rectangles
-        for rect in self.rectangles:
-            self.ax.add_patch(rect)
-        self.area_counter += 1  # Increment color index for the next rectangle
-        self.info_label.config(text="Add new area mode enabled. Drag to select a new area.")
-
     def on_press(self, event):
-        if self.add_area_mode and event.inaxes == self.ax:
+        if event.inaxes == self.ax:
             self.is_dragging = True
             self.start_x = int(event.xdata)
             self.start_y = int(event.ydata)
@@ -157,8 +150,8 @@ class ImageSelectorApp:
             try:
                 self.rect_size = int(self.size_entry.get())
             except ValueError:
-                self.info_label.config(text="Invalid rectangle size! Using default 256px.")
-                self.rect_size = 256
+                self.info_label.config(text="Invalid rectangle size! Using default 20px.")
+                self.rect_size = 20
 
             if self.rect:
                 self.rect.remove()
@@ -169,14 +162,14 @@ class ImageSelectorApp:
                     (self.start_x - self.rect_size // 2, self.start_y - self.rect_size // 2),
                     self.rect_size,
                     self.rect_size,
-                    edgecolor=self.colors[self.area_counter % len(self.colors)],  # Assign color,
+                    edgecolor="red",
                     facecolor="none",
                 )
             )
             self.canvas.draw()
 
     def on_drag(self, event):
-        if self.add_area_mode and self.is_dragging and event.inaxes == self.ax:
+        if self.is_dragging and event.inaxes == self.ax:
             self.start_x = int(event.xdata)
             self.start_y = int(event.ydata)
 
@@ -185,13 +178,8 @@ class ImageSelectorApp:
             self.canvas.draw()
 
     def on_release(self, event):
-        if self.add_area_mode and self.is_dragging:
+        if self.is_dragging:
             self.is_dragging = False
-
-            # Finalize the rectangle
-            self.last_rectangle = self.rect  # Keep track of the last selected rectangle
-
-
             self.extract_area()
 
     def extract_area(self):
@@ -240,7 +228,7 @@ class ImageSelectorApp:
 
                         if extracted_area.shape == (self.rect_size, self.rect_size):
                             # Save the extracted area to a file
-                            file_name = f"{self.file_name}_AREA{self.area_counter}_{channel}_selected_area.npy"
+                            file_name = f"{channel}_selected_area.npy"
                             file_path = f"{directory_path}/{file_name}"
                             np.save(file_path, extracted_area)
                         else:
@@ -263,6 +251,24 @@ class ImageSelectorApp:
         else:
             self.info_label.config(text="No area selected to compute stats.")
 
+    def compute_surf_params(self):
+        if self.extracted_area is not None:
+            dx = (self.physical_dimensions*1000)/self.sh
+            #print(dx, self.physical_dimensions, self.sh)
+            params = extract_parameters(self.extracted_area,dx,dx,self.rect_size,fitted=False)
+            #print("Params:", params)
+            # Convert parameters to a DataFrame for saving
+            params_df = pd.DataFrame.from_dict(params, orient='index', columns=['Value'])
+
+            # Save to an Excel file
+            file_path = filedialog.asksaveasfilename(defaultextension=".xlsx", filetypes=[("Excel files", "*.xlsx"), ("All files", "*.*")])
+            if file_path:
+                params_df.to_excel(file_path, index=True)
+                self.info_label.config(text="Surface parameters saved successfully!")
+            else:
+                self.info_label.config(text="Save operation canceled.")
+        else:
+            self.info_label.config(text="No area selected to compute surface parameters.")
 
 if __name__ == "__main__":
     root = tk.Tk()

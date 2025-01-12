@@ -26,9 +26,6 @@ class ImageSelectorApp:
         self.stats_button = tk.Button(button_frame, text="Compute Stats", command=self.compute_stats)
         self.stats_button.pack(side=tk.LEFT, padx=5, pady=5)
 
-        self.add_area_button = tk.Button(button_frame, text="Add New Area", command=self.enable_add_area)
-        self.add_area_button.pack(side=tk.LEFT, padx=5, pady=5)
-
         # Dropdown for scan direction
         self.scan_dir_label = tk.Label(root, text="Select Scan Direction:")
         self.scan_dir_label.pack()
@@ -74,14 +71,8 @@ class ImageSelectorApp:
         self.extracted_area = None
         self.tdms_blend = None  # Store the TDMS file object
         self.sh = None
-        self.add_area_mode = False
         self.directory = None
         self.file_name = None
-        self.last_rectangle = None
-        self.rectangles = []
-        self.area_counter = 0
-        self.colors = ['red', 'blue', 'green', 'purple', 'orange']
-
 
     def load_data(self):
         file_path = filedialog.askopenfilename(filetypes=[("TDMS files", "*.tdms"), ("All files", "*.*")])
@@ -120,7 +111,6 @@ class ImageSelectorApp:
             except Exception as e:
                 self.info_label.config(text=f"Error updating image: {e}")
 
-
     def show_image(self):
         if self.image_data is not None:
             self.ax.clear()
@@ -134,21 +124,8 @@ class ImageSelectorApp:
             self.canvas.mpl_connect("motion_notify_event", self.on_drag)
             self.canvas.mpl_connect("button_release_event", self.on_release)
 
-    def enable_add_area(self):
-        self.add_area_mode = True
-        if self.last_rectangle:
-            # Keep the last rectangle plotted
-            self.rectangles.append(self.last_rectangle)
-            self.last_rectangle = None  # Clear the last rectangle reference
-        #print(self.rectangles)
-        # Draw all saved rectangles
-        for rect in self.rectangles:
-            self.ax.add_patch(rect)
-        self.area_counter += 1  # Increment color index for the next rectangle
-        self.info_label.config(text="Add new area mode enabled. Drag to select a new area.")
-
     def on_press(self, event):
-        if self.add_area_mode and event.inaxes == self.ax:
+        if event.inaxes == self.ax:
             self.is_dragging = True
             self.start_x = int(event.xdata)
             self.start_y = int(event.ydata)
@@ -169,14 +146,15 @@ class ImageSelectorApp:
                     (self.start_x - self.rect_size // 2, self.start_y - self.rect_size // 2),
                     self.rect_size,
                     self.rect_size,
-                    edgecolor=self.colors[self.area_counter % len(self.colors)],  # Assign color,
+                    edgecolor="red",
                     facecolor="none",
                 )
             )
             self.canvas.draw()
+            self.canvas.draw()
 
     def on_drag(self, event):
-        if self.add_area_mode and self.is_dragging and event.inaxes == self.ax:
+        if self.is_dragging and event.inaxes == self.ax:
             self.start_x = int(event.xdata)
             self.start_y = int(event.ydata)
 
@@ -185,13 +163,8 @@ class ImageSelectorApp:
             self.canvas.draw()
 
     def on_release(self, event):
-        if self.add_area_mode and self.is_dragging:
+        if self.is_dragging:
             self.is_dragging = False
-
-            # Finalize the rectangle
-            self.last_rectangle = self.rect  # Keep track of the last selected rectangle
-
-
             self.extract_area()
 
     def extract_area(self):
@@ -240,7 +213,7 @@ class ImageSelectorApp:
 
                         if extracted_area.shape == (self.rect_size, self.rect_size):
                             # Save the extracted area to a file
-                            file_name = f"{self.file_name}_AREA{self.area_counter}_{channel}_selected_area.npy"
+                            file_name = f"{self.file_name}_{channel}_selected_area.npy"
                             file_path = f"{directory_path}/{file_name}"
                             np.save(file_path, extracted_area)
                         else:
