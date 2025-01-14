@@ -84,6 +84,7 @@ class ImageSelectorApp:
 
     def load_data(self):
         file_path = filedialog.askopenfilename(filetypes=[("TDMS files", "*.tdms"), ("All files", "*.*")])
+        self.rectangles = []
         self.directory, self.file_name = os.path.split(file_path)
         if file_path:
             try:
