@@ -84,7 +84,9 @@ class ImageSelectorApp:
 
     def load_data(self):
         file_path = filedialog.askopenfilename(filetypes=[("TDMS files", "*.tdms"), ("All files", "*.*")])
+        ### Reinitialize the rectangles data if a new image is loaded
         self.rectangles = []
+        self.last_rectangle = None
         self.directory, self.file_name = os.path.split(file_path)
         if file_path:
             try:
@@ -140,9 +142,10 @@ class ImageSelectorApp:
             # Keep the last rectangle plotted
             self.rectangles.append(self.last_rectangle)
             self.last_rectangle = None  # Clear the last rectangle reference
-        #print(self.rectangles)
+        print(self.rectangles)
         # Draw all saved rectangles
         for rect in self.rectangles:
+            print("Drawing rectangles",len(self.rectangles))
             self.ax.add_patch(rect)
         self.area_counter += 1  # Increment color index for the next rectangle
         self.info_label.config(text="Add new area mode enabled. Drag to select a new area.")
