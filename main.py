@@ -28,6 +28,9 @@ class ImageSelectorApp:
         self.add_area_button = tk.Button(button_frame, text="Add New Area", command=self.enable_add_area)
         self.add_area_button.pack(side=tk.LEFT, padx=5, pady=5)
 
+        self.add_area_button = tk.Button(button_frame, text="Save Coordinates", command=self.save_coordinates)
+        self.add_area_button.pack(side=tk.LEFT, padx=5, pady=5)
+
         # Dropdown for scan direction
         self.scan_dir_label = tk.Label(root, text="Select Scan Direction:")
         self.scan_dir_label.pack()
@@ -78,6 +81,7 @@ class ImageSelectorApp:
         self.file_name = None
         self.last_rectangle = None
         self.rectangles = []
+        self.rectangles_coord = []
         self.area_counter = 0
         self.colors = ['red', 'blue', 'green', 'purple', 'orange']
 
@@ -141,11 +145,12 @@ class ImageSelectorApp:
         if self.last_rectangle:
             # Keep the last rectangle plotted
             self.rectangles.append(self.last_rectangle)
+            self.rectangles_coord.append([self.start_x - self.rect_size // 2, self.start_y - self.rect_size // 2])
             self.last_rectangle = None  # Clear the last rectangle reference
         print(self.rectangles)
         # Draw all saved rectangles
         for rect in self.rectangles:
-            print("Drawing rectangles",len(self.rectangles))
+            #print("Drawing rectangles",len(self.rectangles))
             self.ax.add_patch(rect)
         self.area_counter += 1  # Increment color index for the next rectangle
         self.info_label.config(text="Add new area mode enabled. Drag to select a new area.")
@@ -221,7 +226,7 @@ class ImageSelectorApp:
 
     def save_area(self):
         if self.image_data is not None and self.tdms_blend is not None:
-            directory_path = filedialog.askdirectory(title="Select Directory to Save Areas")
+            directory_path = filedialog.askdirectory(initialdir=self.directory,title="Select Directory to Save Areas")
             if directory_path:
                 scan_dir = self.scan_dir_var.get()
                 channels = list(self.tdms_blend[scan_dir]._channels.keys())
@@ -265,6 +270,19 @@ class ImageSelectorApp:
             print(f"Mean: {mean_value:.2f}, Std Dev: {std_dev:.2f}")
         else:
             self.info_label.config(text="No area selected to compute stats.")
+
+    def save_coordinates(self):
+        if self.rectangles_coord:
+            # File path to save the coordinates
+            file_path = f"{self.directory}/selected_areas_coordinates.txt"
+            # Save the list to a text file
+            with open(file_path, "w") as file:
+                for pair in self.rectangles_coord:
+                    file.write(f"{pair[0] if pair[0]>0 else 0}, {pair[1] if pair[1]>0 else 0}\n")
+
+            print(f"Coordinates saved to {file_path}")
+        else:
+            self.info_label.config(text="No areas selected to for saving.")
 
 
 if __name__ == "__main__":
