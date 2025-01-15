@@ -185,8 +185,18 @@ class ImageSelectorApp:
 
     def on_drag(self, event):
         if self.add_area_mode and self.is_dragging and event.inaxes == self.ax:
-            self.start_x = int(event.xdata)
-            self.start_y = int(event.ydata)
+
+            # Get image dimensions
+            img_height, img_width = self.image_data.shape
+            x = int(event.xdata)
+            y = int(event.ydata)
+
+            # Clamp the rectangle's position within image bounds
+            x_clamped = max(self.rect_size // 2, min(x, img_width - self.rect_size // 2))
+            y_clamped = max(self.rect_size // 2, min(y, img_height - self.rect_size // 2))
+
+            # Update the rectangle position
+            self.start_x, self.start_y = x_clamped, y_clamped
 
             if self.rect:
                 self.rect.set_xy((self.start_x - self.rect_size // 2, self.start_y - self.rect_size // 2))
@@ -278,7 +288,7 @@ class ImageSelectorApp:
             # Save the list to a text file
             with open(file_path, "w") as file:
                 for pair in self.rectangles_coord:
-                    file.write(f"{pair[0] if pair[0]>0 else 0}, {pair[1] if pair[1]>0 else 0}\n")
+                    file.write(f"{pair[0]}, {pair[1]}\n")
 
             print(f"Coordinates saved to {file_path}")
         else:
