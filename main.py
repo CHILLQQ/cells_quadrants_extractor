@@ -158,8 +158,14 @@ class ImageSelectorApp:
     def on_press(self, event):
         if self.add_area_mode and event.inaxes == self.ax:
             self.is_dragging = True
-            self.start_x = int(event.xdata)
-            self.start_y = int(event.ydata)
+
+            img_height, img_width = self.image_data.shape
+
+            # Clamp initial rectangle position within bounds
+            x = int(event.xdata)
+            y = int(event.ydata)
+            self.start_x = max(self.rect_size // 2, min(x, img_width - self.rect_size // 2))
+            self.start_y = max(self.rect_size // 2, min(y, img_height - self.rect_size // 2))
 
             # Update rectangle size from entry
             try:
