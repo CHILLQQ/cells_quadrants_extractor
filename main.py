@@ -34,6 +34,9 @@ class ImageSelectorApp:
         self.add_area_button = tk.Button(button_frame, text="Save Im", command=self.save_image)
         self.add_area_button.pack(side=tk.LEFT, padx=5, pady=5)
 
+        self.add_area_button = tk.Button(button_frame, text="Drop", command=self.drop_selection)
+        self.add_area_button.pack(side=tk.LEFT, padx=5, pady=5)
+
         # Dropdown for scan direction
         self.scan_dir_label = tk.Label(root, text="Select Scan Direction:")
         self.scan_dir_label.pack()
@@ -86,7 +89,7 @@ class ImageSelectorApp:
         self.rectangles = []
         self.rectangles_coord = []
         self.area_counter = 0
-        self.colors = ['red', 'blue', 'green', 'purple', 'orange']
+        self.colors = ['red', 'blue', 'green', 'purple', 'black']
 
 
     def load_data(self):
@@ -142,6 +145,11 @@ class ImageSelectorApp:
             self.ax_sub.clear()
             self.ax_sub.set_title("Selected Area")
             self.canvas.draw()
+
+            ## Draws the previously saved areas if we change channel
+            if self.rectangles:
+                for rect in self.rectangles:
+                    self.ax.add_patch(rect)
 
             self.canvas.mpl_connect("button_press_event", self.on_press)
             self.canvas.mpl_connect("motion_notify_event", self.on_drag)
@@ -314,6 +322,15 @@ class ImageSelectorApp:
         #fig.savefig('subplot_0.png', )
         self.figure.savefig(f"{self.directory}/{self.file_name}.png",bbox_inches=extent)
         self.info_label.config(text="Current image is saved.")
+
+    def drop_selection(self):
+        self.area_counter = 0
+        self.rectangles = []
+        self.rectangles_coord = []
+        self.last_rectangle = None
+        self.show_image() 
+
+        
 
 
 if __name__ == "__main__":
