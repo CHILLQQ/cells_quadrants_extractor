@@ -290,7 +290,7 @@ class ImageSelectorApp:
     def save_coordinates(self):
         if self.rectangles_coord:
             # File path to save the coordinates
-            file_path = f"{self.directory}/selected_areas_coordinates.txt"
+            file_path = f"{self.directory}/{self.file_name}_selected_areas_coordinates.txt"
             # Save the list to a text file
             with open(file_path, "w") as file:
                 for pair in self.rectangles_coord:
