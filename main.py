@@ -95,10 +95,7 @@ class ImageSelectorApp:
     def load_data(self):
         file_path = filedialog.askopenfilename(filetypes=[("TDMS files", "*.tdms"), ("All files", "*.*")])
         ### Reinitialize the rectangles data if a new image is loaded
-        self.rectangles = []
-        self.last_rectangle = None
-        self.rectangles_coord = []
-        self.area_counter = 0
+        self.reset_area_cash()
         self.directory, self.file_name = os.path.split(file_path)
         if file_path:
             try:
@@ -326,11 +323,14 @@ class ImageSelectorApp:
         self.info_label.config(text="Current image is saved.")
 
     def drop_selection(self):
+        self.reset_area_cash()
+        self.show_image() 
+
+    def reset_area_cash(self):
         self.area_counter = 0
         self.rectangles = []
         self.rectangles_coord = []
         self.last_rectangle = None
-        self.show_image() 
 
         
 
