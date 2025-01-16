@@ -31,6 +31,9 @@ class ImageSelectorApp:
         self.add_area_button = tk.Button(button_frame, text="Save Coordinates", command=self.save_coordinates)
         self.add_area_button.pack(side=tk.LEFT, padx=5, pady=5)
 
+        self.add_area_button = tk.Button(button_frame, text="Save Im", command=self.save_image)
+        self.add_area_button.pack(side=tk.LEFT, padx=5, pady=5)
+
         # Dropdown for scan direction
         self.scan_dir_label = tk.Label(root, text="Select Scan Direction:")
         self.scan_dir_label.pack()
@@ -299,6 +302,12 @@ class ImageSelectorApp:
             print(f"Coordinates saved to {file_path}")
         else:
             self.info_label.config(text="No areas selected to for saving.")
+
+    def save_image(self):
+        extent = self.ax.get_window_extent().transformed(self.figure.dpi_scale_trans.inverted())
+        #fig.savefig('subplot_0.png', )
+        self.figure.savefig(f"{self.directory}/{self.file_name}.png",bbox_inches=extent)
+        self.info_label.config(text="Current image is saved.")
 
 
 if __name__ == "__main__":
