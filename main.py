@@ -98,6 +98,7 @@ class ImageSelectorApp:
         self.rectangles = []
         self.last_rectangle = None
         self.rectangles_coord = []
+        self.area_counter = 0
         self.directory, self.file_name = os.path.split(file_path)
         if file_path:
             try:
