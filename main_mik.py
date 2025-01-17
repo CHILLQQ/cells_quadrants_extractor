@@ -97,6 +97,9 @@ class ImageSelectorApp:
         ### Reinitialize the rectangles data if a new image is loaded
         self.reset_area_cash()
         self.directory, self.file_name = os.path.split(file_path)
+        save_dir = f"{self.directory}/quadrants"
+        if not os.path.exists(save_dir):
+            os.makedirs(save_dir)
         if file_path:
             try:
                 self.tdms_blend = TdmsFile.read(file_path)
