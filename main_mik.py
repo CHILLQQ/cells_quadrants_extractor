@@ -144,7 +144,7 @@ class ImageSelectorApp:
             self.ax.clear()
             self.ax.imshow(self.image_data, vmin=vmin, vmax=vmax, cmap='YlOrBr_r')
             #self.ax.set_title("Drag to select an area")
-            self.ax.set_title(self.file_name)
+            self.ax.set_title(f"{self.file_name}. Mean: {np.mean(self.image_data): .2f}")
             self.ax_sub.clear()
             self.ax_sub.set_title("Selected Area")
             self.canvas.draw()
