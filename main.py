@@ -136,8 +136,8 @@ class ImageSelectorApp:
         if self.image_data is not None:
             #print(np.amin(self.image_data),np.amax(self.image_data))
             #print(np.percentile(self.image_data, 10),np.percentile(self.image_data, 90))
-            vmin = np.percentile(self.image_data, 10)
-            vmax = np.percentile(self.image_data, 90)
+            vmin = np.percentile(np.nan_to_num(self.image_data,0), 10)
+            vmax = np.percentile(np.nan_to_num(self.image_data,0), 90)
             self.ax.clear()
             self.ax.imshow(self.image_data, vmin=vmin, vmax=vmax, cmap='YlOrBr_r')
             #self.ax.set_title("Drag to select an area")
@@ -249,8 +249,8 @@ class ImageSelectorApp:
 
                 # Plot selected area in the subplot
                 self.ax_sub.clear()
-                vmin = np.percentile(self.extracted_area, 10)
-                vmax = np.percentile(self.extracted_area, 90)
+                vmin = np.percentile(np.nan_to_num(self.extracted_area,0), 10)
+                vmax = np.percentile(np.nan_to_num(self.extracted_area,0), 90)
                 self.ax_sub.imshow(self.extracted_area, vmin=vmin, vmax=vmax, cmap='YlOrBr_r')
                 self.ax_sub.set_title("Selected Area")
                 self.canvas.draw()
