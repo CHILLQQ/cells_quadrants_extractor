@@ -41,6 +41,9 @@ class ImageSelectorApp:
         self.add_area_button = tk.Button(button_frame, text="Drop", command=self.drop_selection)
         self.add_area_button.pack(side=tk.LEFT, padx=5, pady=5)
 
+        self.save_button = tk.Button(button_frame, text="Save 4", command=self.save_four_quadrants)
+        self.save_button.pack(side=tk.LEFT, padx=5, pady=5)
+
         # Dropdown for scan direction
         self.scan_dir_label = tk.Label(root, text="Select Scan Direction:")
         self.scan_dir_label.pack()
@@ -112,6 +115,7 @@ class ImageSelectorApp:
         file_path = filedialog.askopenfilename(filetypes=[("All files", "*.*")])
         ### Reinitialize the rectangles data if a new image is loaded
         self.reset_area_cash()
+        self.channels = []
         self.directory, self.file_name = os.path.split(file_path)
         save_dir = f"{self.directory}/quadrants"
         if not os.path.exists(save_dir):
@@ -306,6 +310,43 @@ class ImageSelectorApp:
                             np.save(file_path, extracted_area)
                         else:
                             self.info_label.config(text=f"Selected area out of bounds for channel: {channel}")
+                    except Exception as e:
+                        self.info_label.config(text=f"Error processing channel {channel}: {e}")
+
+                self.info_label.config(text="Selected areas saved for all channels!")
+            else:
+                self.info_label.config(text="Save operation canceled.")
+        else:
+            self.info_label.config(text="No area selected or no data loaded to save.")
+
+    def save_four_quadrants(self):
+        if self.image_data is not None and self.tdms_blend is not None:
+            directory_path = self.directory#filedialog.askdirectory(initialdir=self.directory,title="Select Directory to Save Areas")
+            if directory_path:
+                # scan_dir = self.scan_dir_var.get()
+                # channels = list(self.tdms_blend[scan_dir]._channels.keys())
+
+                for channel in self.channels:
+                    try:
+                        # Extract data for the channel
+                        channel_image = self.tdms_blend.get_channel(channel).pixels
+
+                        area1 = channel_image[:256, :256]
+                        area2 = channel_image[:256, 256:]
+                        area3 = channel_image[256:, :256]
+                        area4 = channel_image[256:, 256:]
+                        extracted_areas = [area1,area2,area3,area4]
+
+                        for i,area in enumerate(extracted_areas):
+                            # Save the extracted area to a file
+                            file_name = f"{self.file_name}_AREA{i}_{channel}_selected_area.npy"
+                            file_path = f"{directory_path}/quadrants/{file_name}"
+                            np.save(file_path, area)
+                        file_path = f"{self.directory}/{self.file_name}_selected_areas_coordinates.txt"
+                        # Save the list to a text file
+                        with open(file_path, "w") as file:
+                            for pair in [[0,0],[256,0],[0,256],[256,256]]:
+                                file.write(f"{pair[0]}, {pair[1]}\n")
                     except Exception as e:
                         self.info_label.config(text=f"Error processing channel {channel}: {e}")
 
