@@ -41,7 +41,7 @@ class ImageSelectorApp:
         self.add_area_button = tk.Button(button_frame, text="Drop", command=self.drop_selection)
         self.add_area_button.pack(side=tk.LEFT, padx=5, pady=5)
 
-        self.save_button = tk.Button(button_frame, text="Save 4", command=self.save_four_quadrants)
+        self.save_button = tk.Button(button_frame, text="Save All", command=self.save_all_quadrants)
         self.save_button.pack(side=tk.LEFT, padx=5, pady=5)
 
         # Dropdown for scan direction
@@ -319,7 +319,7 @@ class ImageSelectorApp:
         else:
             self.info_label.config(text="No area selected or no data loaded to save.")
 
-    def save_four_quadrants(self):
+    def save_all_quadrants(self):
         if self.image_data is not None and self.tdms_blend is not None:
             directory_path = self.directory#filedialog.askdirectory(initialdir=self.directory,title="Select Directory to Save Areas")
             if directory_path:
@@ -341,8 +341,6 @@ class ImageSelectorApp:
                             extracted_areas = [area1,area2,area3,area4]
                         else:
                             extracted_areas = [area1,area2]
-
-                        print(extracted_areas)
 
                         for i,area in enumerate(extracted_areas):
                             # Save the extracted area to a file
