@@ -121,17 +121,10 @@ class ImageSelectorApp:
         if not os.path.exists(save_dir):
             os.makedirs(save_dir)
         if file_path:
-            #try:
+            try:
                 self.tdms_blend = pySPM.Bruker(file_path)
-                #channels = []
-                for layer in self.tdms_blend.layers:
-                    with contextlib.suppress(KeyError):
-                        temp = layer[b"@2:Image Data"][0].decode("latin1")
-                        pattern = r'"(.*?)"'
-                        match = re.search(pattern, temp)
-                        extracted_channel_name = match.group(1)
-                        self.channels.append(extracted_channel_name)
-                #channels = extract_channel_names_bruker(self.tdms_blend)
+                self.channels = self.extract_channel_names_bruker(self.tdms_blend)
+                print(self.channels)
 
                 # Populate channel dropdown
                 self.channel_dropdown['values'] = self.channels
@@ -139,8 +132,8 @@ class ImageSelectorApp:
                     self.channel_var.set(self.channels[0])
 
                 self.update_image()
-            # except Exception as e:
-            #     self.info_label.config(text=f"Error loading file: {e}")
+            except Exception as e:
+                self.info_label.config(text=f"Error loading file: {e}")
 
     def update_image(self, event=None):
         if self.tdms_blend is not None:
