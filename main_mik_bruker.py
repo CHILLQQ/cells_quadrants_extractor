@@ -330,16 +330,23 @@ class ImageSelectorApp:
                     try:
                         # Extract data for the channel
                         channel_image = self.tdms_blend.get_channel(channel).pixels
+                        print(channel_image.shape)
 
                         area1 = channel_image[:256, :256]
                         area2 = channel_image[:256, 256:]
                         area3 = channel_image[256:, :256]
                         area4 = channel_image[256:, 256:]
-                        extracted_areas = [area1,area2,area3,area4]
+                        #print(area1,area2,area3,area4)
+                        if channel_image.shape[0] == 512:
+                            extracted_areas = [area1,area2,area3,area4]
+                        else:
+                            extracted_areas = [area1,area2]
+
+                        print(extracted_areas)
 
                         for i,area in enumerate(extracted_areas):
                             # Save the extracted area to a file
-                            file_name = f"{self.file_name}_AREA{i}_{channel}_selected_area.npy"
+                            file_name = f"{self.file_name}_AREA{i+1}_{channel}_selected_area.npy"
                             file_path = f"{directory_path}/quadrants/{file_name}"
                             np.save(file_path, area)
                         file_path = f"{self.directory}/{self.file_name}_selected_areas_coordinates.txt"
